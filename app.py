@@ -1,17 +1,19 @@
-from src.config import DATA_RAW, DATA_PROCESSED, MODELS_DIR, RESULTS_DIR, PRETRAINED_MODEL, MODEL_SHORT_NAME
+from src.config import PRETRAINED_MODEL, MODEL_SHORT_NAME, DATA_RAW, RESULTS_DIR
 
 def main():
-    print("Project thesis_prototype berhasil dijalankan")
-    print(f"Model            : {PRETRAINED_MODEL}  ({MODEL_SHORT_NAME})")
-    print("Data raw folder  :", DATA_RAW)
-    print("Data processed   :", DATA_PROCESSED)
-    print("Models folder    :", MODELS_DIR)
-    print("Results folder   :", RESULTS_DIR)
-
-    print("\nAvailable commands:")
-    print("  python -m src.preprocessing   → clean data & create train/val/test splits")
-    print(f"  python -m src.train           → fine-tune {MODEL_SHORT_NAME} (GPU recommended)")
-    print(f"  python -m src.compare         → compare {MODEL_SHORT_NAME} vs Naive Bayes / SVM / LR")
+    print("=" * 55)
+    print("  Thesis — IndoBERT Sentiment Analysis (PPKM Tweets)")
+    print("=" * 55)
+    print(f"  Model   : {PRETRAINED_MODEL}")
+    print(f"  Data    : {DATA_RAW}")
+    print(f"  Results : {RESULTS_DIR}")
+    print()
+    print("Run order:")
+    print("  1. python -m src.split_data")
+    print("  2. python -m src.preprocessing")
+    print("  3. python -m src.train --mode formal")
+    print("  4. python -m src.train --mode informal")
+    print("  5. python -m src.compare")
 
 if __name__ == "__main__":
     main()

@@ -1,58 +1,43 @@
 """
 preprocessing.py
 ────────────────
-Tweet cleaning pipeline for Indonesian PPKM sentiment data.
-Removes noise (URLs, mentions, hashtags, emoji, etc.) before tokenization.
+Clean tweets from CSV splits produced by split_data.py.
+Applies cleaning + normalization and overwrites the CSVs with clean_text column.
+
+Usage:
+    python -m src.preprocessing
 """
 
 import re
 import unicodedata
 import pandas as pd
-from src.normalization import normalize
-from src.config import (
-    RAW_DATA_FILE, DATA_PROCESSED, LABEL_MAP,
-    TEST_SIZE, VAL_SIZE, RANDOM_STATE
-)
 import os
-from sklearn.model_selection import train_test_split
+from src.normalization import normalize
+from src.config import FORMAL_PROCESSED, INFORMAL_PROCESSED
 
 
-# ─── Cleaning steps ───────────────────────────────────────────────────────────
-
-def remove_url(text: str) -> str:
+def remove_url(text):
     return re.sub(r"https?://\S+|www\.\S+", "", text)
 
-
-def remove_mention(text: str) -> str:
+def remove_mention(text):
     return re.sub(r"@\w+", "", text)
 
-
-def remove_hashtag(text: str) -> str:
-    """Keep the word, drop the '#' symbol."""
+def remove_hashtag(text):
     return re.sub(r"#(\w+)", r"\1", text)
 
-
-def remove_emoji(text: str) -> str:
-    """Remove emoji and other non-BMP unicode."""
+def remove_emoji(text):
     return "".join(
         ch for ch in text
         if unicodedata.category(ch) not in ("So", "Sm") and ord(ch) <= 0xFFFF
     )
 
-
-def remove_punctuation(text: str) -> str:
+def remove_punctuation(text):
     return re.sub(r"[^\w\s]", " ", text)
 
-
-def remove_numbers(text: str) -> str:
+def remove_numbers(text):
     return re.sub(r"\d+", "", text)
 
-
-def clean_tweet(text: str) -> str:
-    """
-    Full cleaning pipeline (applied before BERT tokenization):
-    URL → mention → hashtag → emoji → punctuation → numbers → normalize → trim
-    """
+def clean_tweet(text):
     text = str(text)
     text = remove_url(text)
     text = remove_mention(text)
@@ -60,67 +45,26 @@ def clean_tweet(text: str) -> str:
     text = remove_emoji(text)
     text = remove_punctuation(text)
     text = remove_numbers(text)
-    text = normalize(text)          # lowercase + slang + repeated chars
+    text = normalize(text)
     return text.strip()
 
 
-# ─── Dataset loading & splitting ─────────────────────────────────────────────
-
-def load_and_clean(filepath: str = RAW_DATA_FILE) -> pd.DataFrame:
-    """Load raw xlsx, clean tweets, drop nulls/duplicates."""
-    df = pd.read_excel(filepath)
-    df = df[["Tweet", "sentiment"]].copy()
-    df.columns = ["text", "label"]
-
-    # Drop missing / duplicate rows
-    df.dropna(subset=["text", "label"], inplace=True)
-    df.drop_duplicates(subset=["text"], inplace=True)
-
-    # Ensure labels are integers 0/1/2
-    df["label"] = df["label"].astype(int)
-    assert df["label"].isin([0, 1, 2]).all(), "Unexpected label values found!"
-
-    df["clean_text"] = df["text"].apply(clean_tweet)
-
-    # Drop rows where cleaning produced empty string
-    df = df[df["clean_text"].str.strip() != ""].reset_index(drop=True)
-
-    print(f"[preprocessing] Total samples after cleaning : {len(df):,}")
-    print(f"[preprocessing] Label distribution:\n{df['label'].value_counts().sort_index()}")
-    return df
-
-
-def split_dataset(df: pd.DataFrame):
-    """
-    Stratified split → train / validation / test.
-    Default: 70 % train | 15 % val | 15 % test
-    """
-    X = df["clean_text"]
-    y = df["label"]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, stratify=y, random_state=RANDOM_STATE
-    )
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_train, y_train, test_size=VAL_SIZE / (1 - TEST_SIZE),
-        stratify=y_train, random_state=RANDOM_STATE
-    )
-
-    splits = {
-        "train": (X_train.reset_index(drop=True), y_train.reset_index(drop=True)),
-        "val":   (X_val.reset_index(drop=True),   y_val.reset_index(drop=True)),
-        "test":  (X_test.reset_index(drop=True),  y_test.reset_index(drop=True)),
-    }
-
-    for name, (X_, y_) in splits.items():
-        print(f"[preprocessing] {name:5s}: {len(X_):>5,} samples")
-        out = pd.DataFrame({"clean_text": X_, "label": y_})
-        out.to_csv(os.path.join(DATA_PROCESSED, f"{name}.csv"), index=False)
-
-    return splits
+def clean_split_csvs(processed_dir: str, name: str):
+    """Clean all split CSVs in a processed directory."""
+    for split in ['train', 'val', 'test']:
+        path = os.path.join(processed_dir, f"{split}.csv")
+        df = pd.read_csv(path)
+        df['clean_text'] = df['text'].apply(clean_tweet)
+        df = df[df['clean_text'].str.strip() != ""].reset_index(drop=True)
+        df.to_csv(path, index=False)
+        print(f"[preprocessing] {name:8s} {split:5s}: {len(df):>5,} samples cleaned")
 
 
 if __name__ == "__main__":
-    df = load_and_clean()
-    split_dataset(df)
-    print("[preprocessing] Done — CSVs saved to data/processed/")
+    print("[preprocessing] Cleaning FORMAL splits...")
+    clean_split_csvs(FORMAL_PROCESSED, "FORMAL")
+
+    print("[preprocessing] Cleaning INFORMAL splits...")
+    clean_split_csvs(INFORMAL_PROCESSED, "INFORMAL")
+
+    print("[preprocessing] Done!")
