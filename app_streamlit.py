@@ -212,6 +212,38 @@ html, body, [class*="css"] {
     font-size: 0.9rem;
 }
 
+.example-card {
+    background: rgba(255,255,255,0.92);
+    border-radius: 10px;
+    padding: 1rem;
+    min-height: 120px;
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.example-positive {
+    color: #16a34a;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+}
+
+.example-negative {
+    color: #dc2626;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+}
+
+.example-neutral {
+    color: #d97706;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+}
+
+.example-text {
+    color: #111827;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
@@ -347,7 +379,7 @@ with st.sidebar:
 st.markdown("""
 <div class='main-header'>
     <h1>IndoBERT Sentiment Analysis</h1>
-    <p>Analisis sentimen tweet PPKM — Formal vs Informal • Tugas Akhir</p>
+    <p>Analisis sentimen tweet PPKM — Formal vs Informal</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -472,16 +504,34 @@ with tab1:
     st.markdown("<div class='section-title'>💡 Contoh Tweet</div>",
                 unsafe_allow_html=True)
 
-    examples = {
-        "😊 Positif (Formal)":   "Pemerintah telah melonggarkan aturan PPKM untuk mendukung pemulihan ekonomi masyarakat.",
-        "😠 Negatif (Informal)": "Aduh PPKM lagi? Udah bosen banget, ekonomi makin susah nih gak ada ujungnya.",
-        "😐 Netral (Formal)":    "PPKM level 2 diberlakukan di wilayah Jabodetabek mulai tanggal 1 April 2022.",
-    }
+    examples = [
+        {
+            "label": "Positif (Formal)",
+            "text": "Pemerintah telah melonggarkan aturan PPKM untuk mendukung pemulihan ekonomi masyarakat.",
+            "class": "example-positive"
+        },
+        {
+            "label": "Negatif (Informal)",
+            "text": "Aduh PPKM lagi? Udah bosen banget, ekonomi makin susah nih gak ada ujungnya.",
+            "class": "example-negative"
+        },
+        {
+            "label": "Netral (Formal)",
+            "text": "PPKM level 2 diberlakukan di wilayah Jabodetabek mulai tanggal 1 April 2022.",
+            "class": "example-neutral"
+        },
+    ]
+
     cols = st.columns(3)
-    for col, (label_ex, text_ex) in zip(cols, examples.items()):
+
+    for col, item in zip(cols, examples):
         with col:
-            st.markdown(f"**{label_ex}**")
-            st.code(text_ex, language=None)
+            st.markdown(f"""
+            <div class="example-card">
+                <div class="{item['class']}">{item['label']}</div>
+                <div class="example-text">{item['text']}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -692,6 +742,6 @@ with tab4:
 st.markdown("""
 <div style='text-align:center; padding:2rem 0 1rem; color:rgba(255,255,255,0.3);
      font-size:0.8rem; font-family: Space Mono, monospace;'>
-    IndoBERT Sentiment Analysis • Tugas Akhir
+    IndoBERT Sentiment Analysis
 </div>
 """, unsafe_allow_html=True)
