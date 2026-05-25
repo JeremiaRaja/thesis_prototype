@@ -208,8 +208,20 @@ html, body, [class*="css"] {
     border-radius: 0 8px 8px 0;
     padding: 1rem 1.2rem;
     margin: 0.5rem 0;
-    color: rgba(255,255,255,0.85);
+    color: #ffffff !important;
     font-size: 0.9rem;
+}
+
+/* ── Streamlit info/warning boxes ── */
+[data-testid="stNotification"] {
+    color: #ffffff !important;
+}
+.stAlert p, .stAlert div, .stAlert span {
+    color: #ffffff !important;
+}
+/* fix st.info blue box text */
+[data-baseweb="notification"] {
+    color: #ffffff !important;
 }
 
 /* ── Scrollbar ── */
