@@ -502,7 +502,17 @@ with tab1:
     cols = st.columns(3)
     for col, (label_ex, text_ex) in zip(cols, examples.items()):
         with col:
-            st.markdown(f"**{label_ex}**")
+            st.markdown(f"""
+            <div style="
+                color: #ffffff;
+                font-weight: 700;
+                font-size: 1rem;
+                margin-bottom: 0.6rem;
+            ">
+                {label_ex}
+            </div>
+            """, unsafe_allow_html=True)
+
             st.code(text_ex, language=None)
 
 
@@ -577,9 +587,9 @@ with tab2:
             ax.plot(epochs, hist[f"val_{key}"], "s--", color="white",
                     label="Val", linewidth=2, markersize=5, alpha=0.7)
             ax.set_title(title, color="white", fontsize=12, fontweight="bold")
-            ax.set_xlabel("Epoch", color="rgba(255,255,255,0.6)", fontsize=9)
+            ax.set_xlabel("Epoch", color="white", fontsize=9)
             ax.tick_params(colors="white")
-            ax.spines[:].set_color("rgba(255,255,255,0.15)")
+            ax.spines[:].set_color("#ffffff")
             ax.legend(fontsize=9, facecolor="#302b63", labelcolor="white")
             ax.grid(True, alpha=0.1)
         plt.tight_layout()
@@ -690,8 +700,8 @@ with tab4:
                 try:
                     rows.append({
                         "Kelas":     "accuracy",
-                        "Precision": "",
-                        "Recall":    "",
+                        "Precision": np.nan,
+                        "Recall":    np.nan,
                         "F1-Score":  float(parts2[-2]),
                         "Support":   int(parts2[-1]),
                     })
@@ -699,10 +709,16 @@ with tab4:
 
         if rows:
             df_report = pd.DataFrame(rows).set_index("Kelas")
-            st.dataframe(df_report.style.format(
-                {c: "{:.4f}" for c in ["Precision","Recall","F1-Score"]
-                 if c in df_report.columns}
-            ), use_container_width=True)
+            formatters = {
+                "Precision": lambda x: "" if x == "" or pd.isna(x) else f"{float(x):.4f}",
+                "Recall": lambda x: "" if x == "" or pd.isna(x) else f"{float(x):.4f}",
+                "F1-Score": lambda x: "" if x == "" or pd.isna(x) else f"{float(x):.4f}",
+            }
+
+            st.dataframe(
+                df_report.style.format(formatters),
+                use_container_width=True
+            )
 
         st.markdown("<br>**Raw Report**", unsafe_allow_html=True)
         st.code(report, language=None)
