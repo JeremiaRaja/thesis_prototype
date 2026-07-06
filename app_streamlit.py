@@ -155,11 +155,21 @@ html, body, [class*="css"] {
 
 /* ── Inputs ── */
 .stTextArea textarea {
-    background: rgba(255,255,255,0.05) !important;
+    background: #f8fafc !important;
     border: 1px solid rgba(102,126,234,0.4) !important;
     border-radius: 8px !important;
-    color: white !important;
+    color: #111827 !important;
     font-family: 'DM Sans', sans-serif !important;
+}
+
+.stTextArea textarea::placeholder {
+    color: #6b7280 !important;
+    opacity: 1 !important;
+}
+
+.stTextArea textarea:focus {
+    border: 2px solid #a78bfa !important;
+    box-shadow: 0 0 0 1px #a78bfa !important;
 }
 
 /* ── Buttons ── */
