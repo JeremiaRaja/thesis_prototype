@@ -429,7 +429,7 @@ with tab1:
 
     col_btn1, col_btn2, col_btn3 = st.columns([1,1,1])
     with col_btn2:
-        analyze_btn = st.button("🔍 Analisis Sekarang", use_container_width=True)
+        analyze_btn = st.button("🔍 Analisis Sekarang", width="stretch")
 
     if analyze_btn and tweet_input.strip():
         lang_type = detect_language_type(tweet_input)
@@ -551,7 +551,7 @@ with tab2:
     )
 
     mode_choice = st.radio(
-        "",
+        "Pilih Dataset",
         ["Formal", "Informal"],
         horizontal=True,
         label_visibility="collapsed",
@@ -654,7 +654,7 @@ with tab2:
     if os.path.exists(cm_path):
         col_cm1, col_cm2, col_cm3 = st.columns([1, 2, 1])
         with col_cm2:
-            st.image(cm_path, use_column_width=True)
+            st.image(cm_path, width="stretch")
     else:
         st.info("📂 Confusion matrix belum tersedia.")
 
@@ -688,7 +688,7 @@ with tab3:
         # Bar chart
         chart_path = os.path.join(RESULTS_DIR, "model_comparison.png")
         if os.path.exists(chart_path):
-            st.image(chart_path, use_column_width=True)
+            st.image(chart_path, width="stretch")
 
         # Table
         st.markdown("<br>**Detail Tabel**", unsafe_allow_html=True)
@@ -696,7 +696,7 @@ with tab3:
             subset=["Accuracy","Macro-F1"],
             color="#2d1b69"
         )
-        st.dataframe(styled, use_container_width=True)
+        st.dataframe(styled, width="stretch")
 
         # Key findings
         best_model = df_comp["Macro-F1"].idxmax()
@@ -767,7 +767,7 @@ with tab4:
 
             st.dataframe(
                 df_report.style.format(formatters),
-                use_container_width=True
+                width="stretch"
             )
 
         st.markdown("<br>**Raw Report**", unsafe_allow_html=True)
