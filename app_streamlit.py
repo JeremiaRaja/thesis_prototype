@@ -238,6 +238,28 @@ html, body, [class*="css"] {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
 ::-webkit-scrollbar-thumb { background: #667eea; border-radius: 3px; }
+
+/* ===========================
+   TAB 2 - Hasil Training
+=========================== */
+
+/* Radio Formal / Informal */
+.stRadio label,
+.stRadio span,
+.stRadio p,
+div[role="radiogroup"] label,
+div[role="radiogroup"] span,
+div[role="radiogroup"] p,
+[data-baseweb="radio"] label,
+[data-baseweb="radio"] span {
+    color: #ffffff !important;
+}
+
+/* Markdown text (Training Curve & Confusion Matrix) */
+.stMarkdown p,
+.stMarkdown strong {
+    color: #ffffff !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -523,8 +545,13 @@ with tab2:
     st.markdown("<div class='section-title'>📊 Hasil Training IndoBERT</div>",
                 unsafe_allow_html=True)
 
+    st.markdown(
+        "<div style='color:white;font-weight:600;margin-bottom:0.4rem;'>Pilih Dataset</div>",
+        unsafe_allow_html=True
+    )
+
     mode_choice = st.radio(
-        "Pilih Dataset:",
+        "",
         ["Formal", "Informal"],
         horizontal=True,
         label_visibility="collapsed",
@@ -570,7 +597,18 @@ with tab2:
     # Training curves
     hist = load_history(mode)
     if hist:
-        st.markdown(f"**Training Curve — IndoBERT ({mode_choice})**")
+        st.markdown(
+            f"""
+            <h4 style="
+                color:white;
+                margin-bottom:15px;
+                font-weight:700;
+            ">
+                📈 Training Curve — IndoBERT ({mode_choice})
+            </h4>
+            """,
+            unsafe_allow_html=True
+        )
         fig, axes = plt.subplots(1, 3, figsize=(14, 4))
         fig.patch.set_facecolor("none")
 
@@ -599,7 +637,19 @@ with tab2:
         st.info(f"📂 File `results/history_IndoBERT_{mode}.json` belum ada. Jalankan training terlebih dahulu.")
 
     # Confusion matrix
-    st.markdown("<br>**Confusion Matrix**", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <h4 style="
+            color:white;
+            margin-top:20px;
+            margin-bottom:15px;
+            font-weight:700;
+        ">
+            🧩 Confusion Matrix
+        </h4>
+        """,
+        unsafe_allow_html=True
+    )
     cm_path = os.path.join(RESULTS_DIR, f"confusion_matrix_IndoBERT_{mode}.png")
     if os.path.exists(cm_path):
         col_cm1, col_cm2, col_cm3 = st.columns([1, 2, 1])
