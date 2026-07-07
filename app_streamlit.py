@@ -267,7 +267,10 @@ div[role="radiogroup"] p,
 # ─── Constants ────────────────────────────────────────────────────────────────
 RESULTS_DIR = "results"
 MODELS_DIR  = "models"
-LABEL_MAP   = {0: "negatif", 1: "positif", 2: "netral"}
+LABEL_MAPS = {
+    "formal":   {0: "netral", 1: "positif", 2: "negatif"},
+    "informal": {0: "netral", 1: "positif", 2: "negatif"},
+}
 LABEL_EMOJI = {"positif": "😊", "negatif": "😠", "netral": "😐"}
 
 SLANG_WORDS = set([
@@ -305,7 +308,7 @@ def load_model(mode):
         return None, None
 
 
-def predict_sentiment(text, tokenizer, model):
+def predict_sentiment(text, tokenizer, model, label_map):
     """Run inference and return label + confidence scores."""
     import torch
     inputs = tokenizer(
@@ -319,7 +322,7 @@ def predict_sentiment(text, tokenizer, model):
         logits = model(**inputs).logits
     probs  = torch.softmax(logits, dim=1).squeeze().numpy()
     pred   = int(np.argmax(probs))
-    return LABEL_MAP[pred], probs
+    return label_map[pred], probs
 
 
 # ─── Load results helpers ─────────────────────────────────────────────────────
@@ -462,7 +465,12 @@ with tab1:
                 """)
             else:
                 with st.spinner("Menganalisis sentimen..."):
-                    label, probs = predict_sentiment(tweet_input, tokenizer, model)
+                    label_map = LABEL_MAPS[lang_type]
+                    label, probs = predict_sentiment(tweet_input, tokenizer, model, label_map)
+                
+                # st.write("Model label config:", model.config.id2label)
+                # st.write("Raw probs:", probs)
+                # st.write("Pred index:", int(np.argmax(probs)))
 
                 emoji = LABEL_EMOJI[label]
                 badge_class = f"badge-{label}"
@@ -487,7 +495,7 @@ with tab1:
             fig.patch.set_facecolor("none")
             ax.set_facecolor("none")
 
-            label_to_idx = {v: k for k, v in LABEL_MAP.items()}
+            label_to_idx = {v: k for k, v in label_map.items()}
             values = [probs[label_to_idx[l]] for l in labels_order]
 
             bars = ax.barh(labels_order, values, color=colors, height=0.5,
