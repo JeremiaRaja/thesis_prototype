@@ -396,7 +396,7 @@ def plot_confusion_matrix_plotly(tag, mode):
     ))
     fig.update_layout(
         **PLOTLY_LAYOUT,
-        title=dict(text=f"Confusion Matrix — IndoBERT ({mode.capitalize()})",
+        title=dict(text=f"Confusion Matrix Test Dataset — IndoBERT ({mode.capitalize()})",
                    font=dict(color="white", size=14)),
         xaxis=dict(title="Predicted", title_font=dict(color="white"),
                    tickfont=dict(color="white")),
@@ -406,6 +406,114 @@ def plot_confusion_matrix_plotly(tag, mode):
     )
     return fig
 
+def plot_training_curve_plotly(hist, mode_choice):
+    epochs = list(range(1, len(hist["train_loss"]) + 1))
+
+    fig = make_subplots(
+        rows=1, cols=3,
+        subplot_titles=("Loss", "Accuracy", "Macro-F1")
+    )
+
+    metrics = [
+        ("loss", "Loss"),
+        ("acc", "Accuracy"),
+        ("f1", "Macro-F1"),
+    ]
+
+    for i, (key, title) in enumerate(metrics, start=1):
+        fig.add_trace(
+            go.Scatter(
+                x=epochs,
+                y=hist[f"train_{key}"],
+                mode="lines+markers",
+                name=f"Train {title}",
+            ),
+            row=1, col=i
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=epochs,
+                y=hist[f"val_{key}"],
+                mode="lines+markers",
+                name=f"Val {title}",
+            ),
+            row=1, col=i
+        )
+
+    fig.update_layout(
+        **PLOTLY_LAYOUT,
+        title=dict(
+            text=f"Training Curve — IndoBERT ({mode_choice})",
+            font=dict(color="white", size=16)
+        ),
+        height=430,
+        legend=dict(
+            bgcolor="rgba(30,30,60,0.8)",
+            bordercolor="#667eea",
+            borderwidth=1,
+            font=dict(color="white")
+        )
+    )
+
+    fig.update_xaxes(title_text="Epoch", gridcolor="rgba(255,255,255,0.08)")
+    fig.update_yaxes(gridcolor="rgba(255,255,255,0.08)")
+
+    return fig
+
+def show_model_analysis(hist):
+    best_epoch = int(np.argmax(hist["val_f1"])) + 1
+    best_val_f1 = max(hist["val_f1"])
+    final_train_acc = hist["train_acc"][-1]
+    final_val_acc = hist["val_acc"][-1]
+    gap = final_train_acc - final_val_acc
+
+    if gap > 0.10:
+        overfit_status = "⚠️ Potensi overfitting terdeteksi"
+    else:
+        overfit_status = "✅ Tidak ada overfitting signifikan"
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-value'>Ep.{best_epoch}</div>
+            <div class='metric-label'>Best Epoch</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-value'>{best_val_f1:.3f}</div>
+            <div class='metric-label'>Best Val F1</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-value'>{final_val_acc:.1%}</div>
+            <div class='metric-label'>Final Val Acc</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col4:
+        st.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-value'>{gap:.1%}</div>
+            <div class='metric-label'>Train-Val Gap</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class='info-box'>
+        <b>Model Analysis:</b><br>
+        {overfit_status}<br>
+        Best validation performance diperoleh pada epoch {best_epoch}.
+    </div>
+    """, unsafe_allow_html=True)
 
 def plot_model_comparison_plotly(df):
     models = df.index.tolist()
@@ -508,7 +616,7 @@ st.markdown("""
 # ─── Tabs ─────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4 = st.tabs([
     "🔍 Analisis Tweet",
-    "📊 Hasil Training",
+    "📊 Model Evaluation",
     "🏆 Perbandingan Model",
     "📋 Classification Report",
 ])
@@ -629,6 +737,50 @@ with tab1:
             plt.tight_layout()
             st.pyplot(fig, transparent=True)
             plt.close()
+            # ===============================
+            # MODEL INFORMATION
+            # ===============================
+            hist = load_history(lang_type)
+
+            if hist:
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                st.markdown(
+                    "<div class='section-title'>🤖 Model Performance Summary</div>",
+                    unsafe_allow_html=True
+                )
+
+                def show_model_summary(hist):
+                    best_epoch = int(np.argmax(hist["val_f1"])) + 1
+                    best_val_f1 = max(hist["val_f1"])
+                    final_val_acc = hist["val_acc"][-1]
+                    gap = hist["train_acc"][-1] - hist["val_acc"][-1]
+
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    with col1:
+                        st.markdown(f"<div class='metric-card'><div class='metric-value'>Ep.{best_epoch}</div><div class='metric-label'>Best Epoch</div></div>", unsafe_allow_html=True)
+
+                    with col2:
+                        st.markdown(f"<div class='metric-card'><div class='metric-value'>{best_val_f1:.3f}</div><div class='metric-label'>Best Val F1</div></div>", unsafe_allow_html=True)
+
+                    with col3:
+                        st.markdown(f"<div class='metric-card'><div class='metric-value'>{final_val_acc:.1%}</div><div class='metric-label'>Final Val Acc</div></div>", unsafe_allow_html=True)
+
+                    with col4:
+                        st.markdown(f"<div class='metric-card'><div class='metric-value'>{gap:.1%}</div><div class='metric-label'>Train-Val Gap</div></div>", unsafe_allow_html=True)
+
+                show_model_summary(hist)
+
+                # st.markdown(f"""
+                # <div class='info-box'>
+                #     <b>Model Used</b><br>
+                #     IndoBERT ({lang_type.capitalize()})<br>
+                #     Fine-tuned menggunakan dataset {lang_type}.<br>
+                #     Detail proses training dan confusion matrix tersedia pada tab
+                #     <b>Training Result & Evaluation</b>.
+                # </div>
+                # """, unsafe_allow_html=True)
 
     elif analyze_btn and not tweet_input.strip():
         st.warning("⚠️ Masukkan tweet terlebih dahulu!")
@@ -664,7 +816,7 @@ with tab1:
 # TAB 2 — Hasil Training
 # ══════════════════════════════════════════════════════════════════════════════
 with tab2:
-    st.markdown("<div class='section-title'>📊 Hasil Training IndoBERT</div>",
+    st.markdown("<div class='section-title'>📊 Training & Evaluation IndoBERT</div>",
                 unsafe_allow_html=True)
 
     st.markdown(
@@ -721,40 +873,30 @@ with tab2:
     if hist:
         st.markdown(
             f"""
-            <h4 style="
-                color:white;
-                margin-bottom:15px;
-                font-weight:700;
-            ">
+            <h4 style="color:white;margin-bottom:15px;font-weight:700;">
                 📈 Training Curve — IndoBERT ({mode_choice})
             </h4>
             """,
             unsafe_allow_html=True
         )
-        fig, axes = plt.subplots(1, 3, figsize=(14, 4))
-        fig.patch.set_facecolor("none")
 
-        metrics_plot = [
-            ("loss", "Loss", "#ef473a"),
-            ("acc",  "Accuracy", "#38ef7d"),
-            ("f1",   "Macro-F1", "#a78bfa"),
-        ]
-        for ax, (key, title, color) in zip(axes, metrics_plot):
-            ax.set_facecolor("#1a1a2e")
-            epochs = range(1, len(hist[f"train_{key}"]) + 1)
-            ax.plot(epochs, hist[f"train_{key}"], "o-", color=color,
-                    label="Train", linewidth=2, markersize=5)
-            ax.plot(epochs, hist[f"val_{key}"], "s--", color="white",
-                    label="Val", linewidth=2, markersize=5, alpha=0.7)
-            ax.set_title(title, color="white", fontsize=12, fontweight="bold")
-            ax.set_xlabel("Epoch", color="white", fontsize=9)
-            ax.tick_params(colors="white")
-            ax.spines[:].set_color("#ffffff")
-            ax.legend(fontsize=9, facecolor="#302b63", labelcolor="white")
-            ax.grid(True, alpha=0.1)
-        plt.tight_layout()
-        st.pyplot(fig, transparent=True)
-        plt.close()
+        st.plotly_chart(
+            plot_training_curve_plotly(hist, mode_choice),
+            use_container_width=True,
+            key=f"training_curve_tab2_{mode}"
+        )
+
+        st.markdown(
+            """
+            <h4 style="color:white;margin-top:25px;margin-bottom:15px;font-weight:700;">
+                🧠 Model Analysis
+            </h4>
+            """,
+            unsafe_allow_html=True
+        )
+
+        show_model_analysis(hist)
+
     else:
         st.info(f"📂 File `results/history_IndoBERT_{mode}.json` belum ada. Jalankan training terlebih dahulu.")
 
@@ -776,7 +918,11 @@ with tab2:
     if fig_cm:
         col_cm1, col_cm2, col_cm3 = st.columns([1, 2, 1])
         with col_cm2:
-            st.plotly_chart(fig_cm, use_container_width=True)
+            st.plotly_chart(
+                fig_cm,
+                use_container_width=True,
+                key=f"cm_tab2_{mode}"
+            )
     else:
         st.info("📂 Confusion matrix belum tersedia.")
 
