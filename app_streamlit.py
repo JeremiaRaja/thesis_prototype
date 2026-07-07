@@ -291,6 +291,28 @@ def detect_language_type(text):
     slang_count = sum(1 for t in tokens if t in SLANG_WORDS)
     return "informal" if slang_count >= 2 else "formal"
 
+def is_neutral_tweet(text):
+    text = text.lower()
+
+    neutral_keywords = [
+        "berlaku", "diberlakukan", "mulai", "tanggal",
+        "wilayah", "level", "aturan", "kebijakan",
+        "mengumumkan", "menetapkan", "data", "kasus",
+        "diperbarui", "informasi", "jadwal", "jumlah"
+    ]
+
+    sentiment_words = [
+        "susah", "buruk", "parah", "kecewa", "kesal", "capek",
+        "bosen", "hancur", "rugi", "ribet", "marah", "sedih",
+        "bagus", "baik", "senang", "mantap", "membantu",
+        "mendukung", "berhasil"
+    ]
+
+    has_neutral = any(word in text for word in neutral_keywords)
+    has_sentiment = any(word in text for word in sentiment_words)
+
+    return has_neutral and not has_sentiment
+
 
 # ─── Load model (cached) ──────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
@@ -550,7 +572,15 @@ with tab1:
             else:
                 with st.spinner("Menganalisis sentimen..."):
                     label_map = LABEL_MAPS[lang_type]
-                    label, probs = predict_sentiment(tweet_input, tokenizer, model, label_map)
+
+                    if is_neutral_tweet(tweet_input):
+                        label = "netral"
+                        probs = np.array([
+                            1.0 if label_map[i] == "netral" else 0.0
+                            for i in range(3)
+                        ])
+                    else:
+                        label, probs = predict_sentiment(tweet_input, tokenizer, model, label_map)
                 
                 # st.write("Model label config:", model.config.id2label)
                 # st.write("Raw probs:", probs)
