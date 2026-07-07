@@ -20,6 +20,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # ─── Page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -341,6 +343,88 @@ def load_comparison_csv():
     return None
 
 
+PLOTLY_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(26,26,46,0.8)",
+    font=dict(color="white", family="DM Sans"),
+    margin=dict(l=40, r=40, t=50, b=40),
+)
+
+CM_VALUES = {
+    "IndoBERT_formal":   [[174, 50,   8],
+                          [68,  2409, 62],
+                          [22,  83,  322]],
+    "IndoBERT_informal": [[47,  4,   11],
+                          [13,  91,  13],
+                          [17,  5,  149]],
+}
+
+def plot_confusion_matrix_plotly(tag, mode):
+    if tag not in CM_VALUES:
+        return None
+    cm     = CM_VALUES[tag]
+    labels = ["negatif", "positif", "netral"]
+    fig = go.Figure(data=go.Heatmap(
+        z=cm, x=labels, y=labels,
+        colorscale="Blues",
+        text=[[str(v) for v in row] for row in cm],
+        texttemplate="%{text}",
+        textfont=dict(size=16, color="white"),
+        showscale=True,
+    ))
+    fig.update_layout(
+        **PLOTLY_LAYOUT,
+        title=dict(text=f"Confusion Matrix — IndoBERT ({mode.capitalize()})",
+                   font=dict(color="white", size=14)),
+        xaxis=dict(title="Predicted", title_font=dict(color="white"),
+                   tickfont=dict(color="white")),
+        yaxis=dict(title="Actual", title_font=dict(color="white"),
+                   tickfont=dict(color="white"), autorange="reversed"),
+        height=420,
+    )
+    return fig
+
+
+def plot_model_comparison_plotly(df):
+    models = df.index.tolist()
+    acc    = df["Accuracy"].tolist()
+    f1     = df["Macro-F1"].tolist()
+
+    acc_colors = ["#667eea" if "IndoBERT" in m else "#4a5568" for m in models]
+    f1_colors  = ["#a78bfa" if "IndoBERT" in m else "#6b7280" for m in models]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Accuracy", x=models, y=acc,
+        marker_color=acc_colors,
+        text=[f"{v:.3f}" for v in acc],
+        textposition="outside",
+        textfont=dict(color="white", size=11),
+    ))
+    fig.add_trace(go.Bar(
+        name="Macro-F1", x=models, y=f1,
+        marker_color=f1_colors,
+        text=[f"{v:.3f}" for v in f1],
+        textposition="outside",
+        textfont=dict(color="white", size=11),
+    ))
+    fig.update_layout(
+        **PLOTLY_LAYOUT,
+        barmode="group",
+        title=dict(text="IndoBERT Formal vs Informal — Full Model Comparison",
+                   font=dict(color="white", size=15)),
+        xaxis=dict(tickangle=-20, tickfont=dict(color="white", size=10),
+                   gridcolor="rgba(255,255,255,0.05)"),
+        yaxis=dict(range=[0, 1.15], tickfont=dict(color="white"),
+                   gridcolor="rgba(255,255,255,0.1)", title="Score",
+                   title_font=dict(color="white")),
+        legend=dict(bgcolor="rgba(30,30,60,0.8)", bordercolor="#667eea",
+                    borderwidth=1, font=dict(color="white")),
+        height=500,
+    )
+    return fig
+
+
 def load_report(tag):
     path = os.path.join(RESULTS_DIR, f"report_{tag}.txt")
     if os.path.exists(path):
@@ -658,11 +742,11 @@ with tab2:
         """,
         unsafe_allow_html=True
     )
-    cm_path = os.path.join(RESULTS_DIR, f"confusion_matrix_IndoBERT_{mode}.png")
-    if os.path.exists(cm_path):
+    fig_cm = plot_confusion_matrix_plotly(f"IndoBERT_{mode}", mode)
+    if fig_cm:
         col_cm1, col_cm2, col_cm3 = st.columns([1, 2, 1])
         with col_cm2:
-            st.image(cm_path, width="stretch")
+            st.plotly_chart(fig_cm, use_container_width=True)
     else:
         st.info("📂 Confusion matrix belum tersedia.")
 
@@ -693,18 +777,21 @@ with tab3:
         </div>
         """, unsafe_allow_html=True)
 
-        # Bar chart
-        chart_path = os.path.join(RESULTS_DIR, "model_comparison.png")
-        if os.path.exists(chart_path):
-            st.image(chart_path, width="stretch")
+        # Bar chart — Plotly interaktif
+        df_plot = df_comp[["Accuracy","Macro-F1"]].dropna()
+        st.plotly_chart(plot_model_comparison_plotly(df_plot), use_container_width=True)
 
         # Table
         st.markdown("<br>**Detail Tabel**", unsafe_allow_html=True)
-        styled = df_comp.style.format("{:.4f}").highlight_max(
-            subset=["Accuracy","Macro-F1"],
+        df_display = df_comp.copy()
+        for col in ["Accuracy", "Macro-F1", "Weighted-F1"]:
+            if col in df_display.columns:
+                df_display[col] = pd.to_numeric(df_display[col], errors="coerce")
+        styled = df_display.style.format("{:.4f}", na_rep="-").highlight_max(
+            subset=[c for c in ["Accuracy","Macro-F1"] if c in df_display.columns],
             color="#2d1b69"
         )
-        st.dataframe(styled, width="stretch")
+        st.dataframe(styled, use_container_width=True)
 
         # Key findings
         best_model = df_comp["Macro-F1"].idxmax()
