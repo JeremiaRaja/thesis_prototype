@@ -343,88 +343,6 @@ def load_comparison_csv():
     return None
 
 
-PLOTLY_LAYOUT = dict(
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(26,26,46,0.8)",
-    font=dict(color="white", family="DM Sans"),
-    margin=dict(l=40, r=40, t=50, b=40),
-)
-
-CM_VALUES = {
-    "IndoBERT_formal":   [[174, 50,   8],
-                          [68,  2409, 62],
-                          [22,  83,  322]],
-    "IndoBERT_informal": [[47,  4,   11],
-                          [13,  91,  13],
-                          [17,  5,  149]],
-}
-
-def plot_confusion_matrix_plotly(tag, mode):
-    if tag not in CM_VALUES:
-        return None
-    cm     = CM_VALUES[tag]
-    labels = ["negatif", "positif", "netral"]
-    fig = go.Figure(data=go.Heatmap(
-        z=cm, x=labels, y=labels,
-        colorscale="Blues",
-        text=[[str(v) for v in row] for row in cm],
-        texttemplate="%{text}",
-        textfont=dict(size=16, color="white"),
-        showscale=True,
-    ))
-    fig.update_layout(
-        **PLOTLY_LAYOUT,
-        title=dict(text=f"Confusion Matrix — IndoBERT ({mode.capitalize()})",
-                   font=dict(color="white", size=14)),
-        xaxis=dict(title="Predicted", title_font=dict(color="white"),
-                   tickfont=dict(color="white")),
-        yaxis=dict(title="Actual", title_font=dict(color="white"),
-                   tickfont=dict(color="white"), autorange="reversed"),
-        height=420,
-    )
-    return fig
-
-
-def plot_model_comparison_plotly(df):
-    models = df.index.tolist()
-    acc    = df["Accuracy"].tolist()
-    f1     = df["Macro-F1"].tolist()
-
-    acc_colors = ["#667eea" if "IndoBERT" in m else "#4a5568" for m in models]
-    f1_colors  = ["#a78bfa" if "IndoBERT" in m else "#6b7280" for m in models]
-
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        name="Accuracy", x=models, y=acc,
-        marker_color=acc_colors,
-        text=[f"{v:.3f}" for v in acc],
-        textposition="outside",
-        textfont=dict(color="white", size=11),
-    ))
-    fig.add_trace(go.Bar(
-        name="Macro-F1", x=models, y=f1,
-        marker_color=f1_colors,
-        text=[f"{v:.3f}" for v in f1],
-        textposition="outside",
-        textfont=dict(color="white", size=11),
-    ))
-    fig.update_layout(
-        **PLOTLY_LAYOUT,
-        barmode="group",
-        title=dict(text="IndoBERT Formal vs Informal — Full Model Comparison",
-                   font=dict(color="white", size=15)),
-        xaxis=dict(tickangle=-20, tickfont=dict(color="white", size=10),
-                   gridcolor="rgba(255,255,255,0.05)"),
-        yaxis=dict(range=[0, 1.15], tickfont=dict(color="white"),
-                   gridcolor="rgba(255,255,255,0.1)", title="Score",
-                   title_font=dict(color="white")),
-        legend=dict(bgcolor="rgba(30,30,60,0.8)", bordercolor="#667eea",
-                    borderwidth=1, font=dict(color="white")),
-        height=500,
-    )
-    return fig
-
-
 def load_report(tag):
     path = os.path.join(RESULTS_DIR, f"report_{tag}.txt")
     if os.path.exists(path):
@@ -484,11 +402,107 @@ st.markdown("""
 
 
 # ─── Tabs ─────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs([
+
+PLOTLY_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(26,26,46,0.8)",
+    font=dict(color="white", family="DM Sans"),
+    margin=dict(l=40, r=40, t=50, b=40),
+)
+
+CM_VALUES = {
+    "IndoBERT_formal":   [[174, 50,   8],
+                          [68,  2409, 62],
+                          [22,  83,  322]],
+    "IndoBERT_informal": [[47,  4,   11],
+                          [13,  91,  13],
+                          [17,  5,  149]],
+}
+
+def plot_confusion_matrix_plotly(tag, mode):
+    if tag not in CM_VALUES:
+        return None
+    cm     = CM_VALUES[tag]
+    labels = ["negatif", "positif", "netral"]
+    fig = go.Figure(data=go.Heatmap(
+        z=cm, x=labels, y=labels,
+        colorscale="Blues",
+        text=[[str(v) for v in row] for row in cm],
+        texttemplate="%{text}",
+        textfont=dict(size=16, color="white"),
+        showscale=True,
+    ))
+    fig.update_layout(
+        **PLOTLY_LAYOUT,
+        title=dict(text=f"Confusion Matrix — IndoBERT ({mode.capitalize()})",
+                   font=dict(color="white", size=14)),
+        xaxis=dict(title="Predicted", title_font=dict(color="white"),
+                   tickfont=dict(color="white")),
+        yaxis=dict(title="Actual", title_font=dict(color="white"),
+                   tickfont=dict(color="white"), autorange="reversed"),
+        height=420,
+    )
+    return fig
+
+
+def plot_model_comparison_plotly(df):
+    models    = df.index.tolist()
+    acc       = df["Accuracy"].tolist()
+    f1        = df["Macro-F1"].tolist()
+    acc_colors = ["#667eea" if "IndoBERT" in m else "#4a5568" for m in models]
+    f1_colors  = ["#a78bfa" if "IndoBERT" in m else "#6b7280" for m in models]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Accuracy", x=models, y=acc, marker_color=acc_colors,
+        text=[f"{v:.3f}" for v in acc], textposition="outside",
+        textfont=dict(color="white", size=11),
+    ))
+    fig.add_trace(go.Bar(
+        name="Macro-F1", x=models, y=f1, marker_color=f1_colors,
+        text=[f"{v:.3f}" for v in f1], textposition="outside",
+        textfont=dict(color="white", size=11),
+    ))
+    fig.update_layout(
+        **PLOTLY_LAYOUT,
+        barmode="group",
+        title=dict(text="IndoBERT Formal vs Informal — Full Model Comparison",
+                   font=dict(color="white", size=15)),
+        xaxis=dict(tickangle=-20, tickfont=dict(color="white", size=10),
+                   gridcolor="rgba(255,255,255,0.05)"),
+        yaxis=dict(range=[0, 1.15], tickfont=dict(color="white"),
+                   gridcolor="rgba(255,255,255,0.1)", title="Score",
+                   title_font=dict(color="white")),
+        legend=dict(bgcolor="rgba(30,30,60,0.8)", bordercolor="#667eea",
+                    borderwidth=1, font=dict(color="white")),
+        height=500,
+    )
+    return fig
+
+
+def load_kfold_data():
+    """Load all K-Fold result files."""
+    results = {}
+    base = "results"
+    files = {
+        "combined":       "combined_fold_results.csv",
+        "mean_std":       "mean_std_summary.csv",
+        "significance":   "significance_test_results.csv",
+        "all_folds_formal":   "all_fold_metrics_formal.csv",
+        "all_folds_informal": "all_fold_metrics_informal.csv",
+    }
+    for key, fname in files.items():
+        path = os.path.join(base, fname)
+        if os.path.exists(path):
+            results[key] = pd.read_csv(path)
+    return results
+
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🔍 Analisis Tweet",
     "📊 Hasil Training",
     "🏆 Perbandingan Model",
     "📋 Classification Report",
+    "🔁 K-Fold Validation",
 ])
 
 
@@ -869,6 +883,206 @@ with tab4:
         st.code(report, language=None)
     else:
         st.info(f"📂 Report untuk {selected} belum tersedia.")
+
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 5 — K-Fold Cross Validation
+# ══════════════════════════════════════════════════════════════════════════════
+with tab5:
+    st.markdown("<div class='section-title'>🔁 K-Fold Cross Validation (5-Fold)</div>",
+                unsafe_allow_html=True)
+
+    kfold_data = load_kfold_data()
+
+    if not kfold_data:
+        st.info("📂 File hasil K-Fold belum tersedia di folder results/.")
+    else:
+        # ── Summary metrics ───────────────────────────────────────────────────
+        st.markdown("### 📊 Ringkasan Hasil K-Fold")
+
+        formal_summary   = {"accuracy": 0.9509, "macro_precision": 0.8653,
+                            "macro_recall": 0.8555, "macro_f1": 0.8601}
+        informal_summary = {"accuracy": 0.8784, "macro_precision": 0.8588,
+                            "macro_recall": 0.8634, "macro_f1": 0.8606}
+
+        if "mean_std" in kfold_data:
+            df_ms = kfold_data["mean_std"]
+            formal_row   = df_ms[df_ms["dataset"] == "formal"].iloc[0]
+            informal_row = df_ms[df_ms["dataset"] == "informal"].iloc[0]
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("""<div class='card'>
+                <div style='font-family:Space Mono,monospace; color:#667eea;
+                     font-size:1rem; font-weight:700; margin-bottom:1rem;'>
+                    📰 FORMAL
+                </div>""", unsafe_allow_html=True)
+            m1, m2 = st.columns(2)
+            with m1:
+                st.markdown(f"""<div class='metric-card'>
+                    <div class='metric-value'>{formal_row['accuracy_mean_std'] if 'mean_std' in kfold_data else '0.9509 ± 0.0025'}</div>
+                    <div class='metric-label'>Accuracy</div>
+                </div>""", unsafe_allow_html=True)
+            with m2:
+                st.markdown(f"""<div class='metric-card'>
+                    <div class='metric-value'>{formal_row['macro_f1_mean_std'] if 'mean_std' in kfold_data else '0.8601 ± 0.0071'}</div>
+                    <div class='metric-label'>Macro F1</div>
+                </div>""", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with col2:
+            st.markdown("""<div class='card'>
+                <div style='font-family:Space Mono,monospace; color:#a78bfa;
+                     font-size:1rem; font-weight:700; margin-bottom:1rem;'>
+                    💬 INFORMAL
+                </div>""", unsafe_allow_html=True)
+            m3, m4 = st.columns(2)
+            with m3:
+                st.markdown(f"""<div class='metric-card'>
+                    <div class='metric-value'>{informal_row['accuracy_mean_std'] if 'mean_std' in kfold_data else '0.8784 ± 0.0099'}</div>
+                    <div class='metric-label'>Accuracy</div>
+                </div>""", unsafe_allow_html=True)
+            with m4:
+                st.markdown(f"""<div class='metric-card'>
+                    <div class='metric-value'>{informal_row['macro_f1_mean_std'] if 'mean_std' in kfold_data else '0.8606 ± 0.0100'}</div>
+                    <div class='metric-label'>Macro F1</div>
+                </div>""", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # ── Per-fold line chart ───────────────────────────────────────────────
+        st.markdown("### 📈 Hasil Per Fold")
+        metric_choice = st.selectbox(
+            "Pilih Metrik:",
+            ["accuracy", "macro_f1", "macro_precision", "macro_recall"],
+            format_func=lambda x: x.replace("_", " ").title()
+        )
+
+        if "combined" in kfold_data:
+            df_combined = kfold_data["combined"]
+            df_formal   = df_combined[df_combined["dataset"] == "formal"].sort_values("fold")
+            df_informal = df_combined[df_combined["dataset"] == "informal"].sort_values("fold")
+
+            fig_fold = go.Figure()
+            fig_fold.add_trace(go.Scatter(
+                x=df_formal["fold"], y=df_formal[metric_choice],
+                mode="lines+markers", name="Formal",
+                line=dict(color="#667eea", width=2),
+                marker=dict(size=8, symbol="circle"),
+            ))
+            fig_fold.add_trace(go.Scatter(
+                x=df_informal["fold"], y=df_informal[metric_choice],
+                mode="lines+markers", name="Informal",
+                line=dict(color="#a78bfa", width=2, dash="dash"),
+                marker=dict(size=8, symbol="square"),
+            ))
+
+            # Mean lines
+            fig_fold.add_hline(
+                y=df_formal[metric_choice].mean(),
+                line_dash="dot", line_color="#667eea", opacity=0.5,
+                annotation_text=f"Formal mean: {df_formal[metric_choice].mean():.4f}",
+                annotation_font_color="#667eea",
+            )
+            fig_fold.add_hline(
+                y=df_informal[metric_choice].mean(),
+                line_dash="dot", line_color="#a78bfa", opacity=0.5,
+                annotation_text=f"Informal mean: {df_informal[metric_choice].mean():.4f}",
+                annotation_font_color="#a78bfa",
+            )
+
+            fig_fold.update_layout(
+                **PLOTLY_LAYOUT,
+                title=dict(
+                    text=f"{metric_choice.replace('_',' ').title()} per Fold — Formal vs Informal",
+                    font=dict(color="white", size=14)
+                ),
+                xaxis=dict(title="Fold", tickvals=[1,2,3,4,5],
+                           tickfont=dict(color="white"),
+                           gridcolor="rgba(255,255,255,0.1)"),
+                yaxis=dict(title=metric_choice.replace("_"," ").title(),
+                           tickfont=dict(color="white"),
+                           gridcolor="rgba(255,255,255,0.1)",
+                           title_font=dict(color="white")),
+                legend=dict(bgcolor="rgba(30,30,60,0.8)", bordercolor="#667eea",
+                            borderwidth=1, font=dict(color="white")),
+                height=420,
+            )
+            st.plotly_chart(fig_fold, use_container_width=True)
+
+        # ── Detail table per fold ─────────────────────────────────────────────
+        st.markdown("### 📋 Detail Hasil Tiap Fold")
+        dataset_choice = st.radio("Dataset:", ["Formal", "Informal"],
+                                  horizontal=True, key="kfold_dataset")
+
+        if "combined" in kfold_data:
+            df_detail = kfold_data["combined"]
+            df_detail = df_detail[
+                df_detail["dataset"] == dataset_choice.lower()
+            ][["fold","accuracy","macro_precision","macro_recall","macro_f1","eval_loss"]].copy()
+            df_detail.columns = ["Fold","Accuracy","Precision","Recall","Macro-F1","Eval Loss"]
+            df_detail = df_detail.set_index("Fold")
+
+            st.dataframe(
+                df_detail.style.format("{:.4f}").highlight_max(
+                    subset=["Accuracy","Macro-F1"], color="#2d1b69"
+                ).highlight_min(
+                    subset=["Eval Loss"], color="#1a3a2a"
+                ),
+                use_container_width=True
+            )
+
+        # ── Significance test ─────────────────────────────────────────────────
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("### 🔬 Uji Signifikansi (Welch t-test & Mann-Whitney)")
+
+        st.markdown("""<div class='info-box'>
+            Uji signifikansi dilakukan untuk mengetahui apakah perbedaan performa
+            IndoBERT pada data <b>formal</b> vs <b>informal</b> signifikan secara statistik
+            (α = 0.05).
+        </div>""", unsafe_allow_html=True)
+
+        sig_data = {
+            "Metrik": ["Accuracy", "Macro Precision", "Macro Recall", "Macro F1"],
+            "Formal Mean": [0.9509, 0.8653, 0.8555, 0.8601],
+            "Informal Mean": [0.8784, 0.8588, 0.8634, 0.8606],
+            "p-value (Welch)": [0.000039, 0.360174, 0.269822, 0.927569],
+            "p-value (Mann-Whitney)": [0.011925, 0.222222, 0.309524, 1.000000],
+            "Signifikan?": ["✅ Ya", "❌ Tidak", "❌ Tidak", "❌ Tidak"],
+        }
+
+        if "significance" in kfold_data:
+            df_sig = kfold_data["significance"]
+            sig_data["p-value (Welch)"]        = df_sig["welch_t_p_value"].tolist()
+            sig_data["p-value (Mann-Whitney)"] = df_sig["mann_whitney_p_value"].tolist()
+            sig_data["Signifikan?"]            = [
+                "✅ Ya" if v else "❌ Tidak"
+                for v in df_sig["significant_welch_0.05"].tolist()
+            ]
+
+        df_sig_display = pd.DataFrame(sig_data).set_index("Metrik")
+        st.dataframe(
+            df_sig_display.style.format({
+                "Formal Mean": "{:.4f}",
+                "Informal Mean": "{:.4f}",
+                "p-value (Welch)": "{:.6f}",
+                "p-value (Mann-Whitney)": "{:.6f}",
+            }),
+            use_container_width=True
+        )
+
+        # Interpretation
+        st.markdown("""<div class='info-box' style='margin-top:1rem;'>
+            📌 <b>Interpretasi:</b><br>
+            • <b>Accuracy</b>: Terdapat perbedaan <b>signifikan</b> (p &lt; 0.05) antara formal dan informal —
+            model lebih akurat pada data formal (95.09%) vs informal (87.84%)<br>
+            • <b>Macro F1</b>: <b>Tidak signifikan</b> (p = 0.928) — kemampuan model dalam mendeteksi
+            semua kelas secara seimbang hampir sama di kedua dataset<br>
+            • Kesimpulan: IndoBERT efektif untuk kedua jenis bahasa, dengan keunggulan accuracy pada data formal
+        </div>""", unsafe_allow_html=True)
 
 
 # ─── Footer ───────────────────────────────────────────────────────────────────
